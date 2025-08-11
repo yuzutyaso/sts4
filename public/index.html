@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sts4</title>
+    <style>
+        body { font-family: sans-serif; margin: 2rem; }
+        #input-form { display: flex; gap: 1rem; margin-bottom: 1rem; }
+        #url-input { flex-grow: 1; padding: 0.5rem; }
+        #content-container { border: 1px solid #ccc; padding: 1rem; min-height: 400px; }
+    </style>
+</head>
+<body>
+    <p>表示したいWebサイトのURLを入力してください。</p>
+
+    <div id="input-form">
+        <input type="text" id="url-input" placeholder="https://example.com" value="https://ja.wikipedia.org/wiki/メインページ">
+        <button onclick="fetchContent()">表示</button>
+    </div>
+
+    <div id="loading-message" style="display: none;">読み込み中...</div>
+    <div id="error-message" style="color: red; display: none;"></div>
+
+    <h2>表示結果</h2>
+    <div id="content-container">
+        </div>
+
+    <script>
+        async function fetchContent() {
+            const urlInput = document.getElementById('url-input').value;
+            const contentContainer = document.getElementById('content-container');
+            const loadingMessage = document.getElementById('loading-message');
+            const errorMessage = document.getElementById('error-message');
+
+            if (!urlInput) {
+                errorMessage.textContent = 'URLを入力してください。';
+                errorMessage.style.display = 'block';
+                return;
+            }
+
+            loadingMessage.style.display = 'block';
+            errorMessage.style.display = 'none';
+            contentContainer.innerHTML = '';
+
+            const proxyUrl = `/proxy?url=${encodeURIComponent(urlInput)}`;
+
+            try {
+                const response = await fetch(proxyUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP Error: ${response.status}`);
+                }
+                
+                const htmlText = await response.text();
+                
+                // プロキシされたコンテンツをiframeで表示
+                //これにより、CSSやJSが正しく動作しやすくなります。
+                const iframe = document.createElement('iframe');
+                iframe.style.width = '100%';
+                iframe.style.height = '100%';
+                iframe.style.border = 'none';
+                iframe.srcdoc = htmlText;
+                
+                contentContainer.appendChild(iframe);
+
+            } catch (error) {
+                console.error('Fetch error:', error);
+                errorMessage.textContent = `コンテンツの読み込み中にエラーが発生しました: ${error.message}`;
+                errorMessage.style.display = 'block';
+            } finally {
+                loadingMessage.style.display = 'none';
+            }
+        }
+    </script>
+
+</body>
+</html>
